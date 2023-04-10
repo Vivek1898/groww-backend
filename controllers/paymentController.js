@@ -49,9 +49,26 @@ exports.paymentVerification = async (req, res) => {
           req.body.planDelatils.planCompleteTime * 24 * 60 * 60 * 1000;
         const expiryDate = new Date(
           today.getTime() + DAYS_IN_MS
-        ).toLocaleDateString();
+        );
+        let formattedExpiryDate;
+        if (expiryDate instanceof Date) {
+           formattedExpiryDate = expiryDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
+          // Use formattedExpiryDate to save the formatted expiry date to the planExpiryDate field
+        } else {
+          console.error('expiryDate is not a valid Date object:', expiryDate);
+        }
+        const IST_TIME_ZONE = 'Asia/Kolkata';
 
-        payment = await Payment.create({
+        const now = new Date();
+        const istDate = new Intl.DateTimeFormat('en-US', {
+          timeZone: IST_TIME_ZONE,
+        }).format(now);
+        
+        const istTime = now.toLocaleTimeString('en-US', {
+          timeZone: IST_TIME_ZONE,
+        });
+        
+       payment = await Payment.create({
           razorpay_order_id,
           razorpay_payment_id,
           razorpay_signature,
@@ -59,11 +76,10 @@ exports.paymentVerification = async (req, res) => {
           payment_id: razorpay_payment_id,
           order_id: razorpay_order_id,
           amount: req.body.BookingData.amount / 100,
-          date: new Date().toLocaleDateString(),
-          planExpiryDate: expiryDate,
-          planprofitPerDay:Number(req.body.planDelatils.profitPerDay),
-
-          time: new Date().toLocaleTimeString(),
+          date: istDate,
+          planExpiryDate: formattedExpiryDate,
+          planprofitPerDay: Number(req.body.planDelatils.profitPerDay),
+          time: istTime,
           plan: req.body.planDelatils.id,
         });
         const populatedPlan = await Payment.findById(payment._id).populate(
