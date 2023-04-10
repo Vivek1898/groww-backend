@@ -4,6 +4,8 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const paymentRoutes = require("./routes/paymentRoutes");
+const planRoutes = require("./routes/planRoute");
+const RefundRoute = require("./routes/refundRoute");
 const morgan = require("morgan");
 
 const app = express();
@@ -24,6 +26,8 @@ app.use(morgan("dev"));
 // route middlewares
 app.use("/api", authRoutes);
 app.use("/api", paymentRoutes);
+app.use("/api/plans", planRoutes);
+app.use("/api/refund", RefundRoute);
 app.get("/api/getkey", (req, res) =>
   res.status(200).json({ key: process.env.RAZORPAY_API_KEY })
 );

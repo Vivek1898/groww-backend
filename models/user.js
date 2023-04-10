@@ -29,7 +29,12 @@ const userSchema = new Schema(
       url: "",
     },
     resetCode: "",
+    payments:[],
   },
+ 
+
+
+
   { timestamps: true }
 );
 
