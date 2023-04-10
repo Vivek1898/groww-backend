@@ -36,6 +36,10 @@ const refundSchema = new Schema(
       type: String,
       trim: true,
     },
+    status:{
+      type:String,
+      default:"Pending",
+    },
     user : { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
 

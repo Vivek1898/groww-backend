@@ -35,6 +35,21 @@ exports.getRefund = async (req,res) =>{
     }
 }
 
+exports.getRefundHistory = async (req,res) =>{
+    try {
+        const refund = await Refund.find({user:req.params.userId});
+        console.log(refund)
+        res.status(200).json({
+            success: true,
+            refund
+        })
+
+    }catch(err){
+        console.log(err);
+        res.status(500).json({ error: "Server error" });
+    }
+}
+
 exports.refundBookings = async (req, res) => {
     console.log("Refund Bookings");
     const { BookingIdToCancel } = req.params;
@@ -43,6 +58,12 @@ exports.refundBookings = async (req, res) => {
     console.log(BookingIdToCancel)
 
     try {
+        // const users = await user.find({
+        //     $and: [
+        //       { email: BookingIdToCancel },
+        //       { refunds: { $elemMatch: { refundId: refundIdToCancel } } }
+        //     ]
+        //   });
         const users=await user.find({email:BookingIdToCancel});
         console.log(users);
    if(users.length==0){
@@ -121,5 +142,20 @@ exports.refundBookings = async (req, res) => {
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Server error" });
+    }
+  };
+
+  exports.changeRefundStatus = async (req, res) => {
+    const{refundId}=req.params;
+    const {  status } = req.body;
+  
+    try {
+      const updatedRefund = await Refund.updateOne({ _id: refundId }, { status });
+      if (updatedRefund.nModified === 0) {
+        return res.status(404).json({ error: 'Refund not found' });
+      }
+      return res.status(200).json({ message: 'Refund status updated successfully' });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
   };
