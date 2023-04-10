@@ -21,6 +21,7 @@ mongoose
 app.use(express.json({ limit: "4mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+app.options('*', cors());
 app.use(morgan("dev"));
 
 // route middlewares
