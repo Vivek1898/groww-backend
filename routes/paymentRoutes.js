@@ -15,6 +15,10 @@ const {
   getNumbers,
   manualAddPlans
 } = require("../controllers/paymentController");
+
+
+
+
 // import {
 //   checkout,
 //   paymentVerification,
@@ -25,12 +29,12 @@ const router = express.Router();
 
 router.post("/checkout", requireSignin, checkout);
 router.post("/paymentverification", paymentVerification);
-router.post("/manual", manualAddPlans);
-router.post("/addbooking", addPayment);
+router.post("/manual",requireSignin,isAdmin, manualAddPlans);
+router.post("/addbooking", requireSignin,addPayment);
 // router.route("/checkout").post(checkout);
 
 // router.route("/paymentverification").post(paymentVerification);
-router.get("/payments/:userId", getPayments2);
+router.get("/payments/:userId",requireSignin, getPayments2);
 router.get("/bookings/:userId", requireSignin, getPayments);
 router.get("/bookings/admin/all", requireSignin, isAdmin, adminGetPayments);
 adminGetPayments
@@ -48,7 +52,7 @@ router.get(
 );
 
 
-router.get("/bookings/get/numbers/all",getNumbers);
+router.get("/bookings/get/numbers/all",requireSignin, isAdmin,getNumbers);
 
 router.post(
   "/booking/:BookingIdToCancel/cancel",
@@ -56,8 +60,8 @@ router.post(
   isAdmin,
   cancelBookings
 );
-router.get("/bookings/wallets/:userId", walletSum);
+router.get("/bookings/wallets/:userId",requireSignin, walletSum);
 
-router.get("/booking/mywallet/all", allWallets);
-router.get("/current/wallets/:userId", getWallet);
+router.get("/booking/mywallet/all",requireSignin, isAdmin, allWallets);
+router.get("/current/wallets/:userId",requireSignin, getWallet);
 module.exports = router;

@@ -10,13 +10,13 @@ const {
   updateWallet,
 } = require("../controllers/refund");
 const router = express.Router();
-
-router.post("/create", createRefund);
+const { requireSignin, isAdmin, isAuthor } = require("../middlewares");
+router.post("/create", requireSignin,createRefund);
 router.get("/get", getRefund);
-router.get("/get/user/:userId", getRefundHistory);
-router.post("/:BookingIdToCancel/cancel", refundBookings);
-router.post("/wallet/:BookingIdToUpdate/update", updateWallet);
-router.post("/:userIdToUpdate/update", updateBookings);
-router.put("/status/:refundId", changeRefundStatus);
+router.get("/get/user/:userId",requireSignin, getRefundHistory);
+router.post("/:BookingIdToCancel/cancel",requireSignin, isAdmin, refundBookings);
+router.post("/wallet/:BookingIdToUpdate/update",requireSignin, isAdmin, updateWallet);
+router.post("/:userIdToUpdate/update",requireSignin, isAdmin, updateBookings);
+router.put("/status/:refundId",requireSignin, isAdmin, changeRefundStatus);
 
 module.exports = router;
