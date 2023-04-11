@@ -15,6 +15,7 @@ const paymentSchema = new mongoose.Schema({
   },
   date :{ type: String,},
   planExpiryDate :{ type: String,},
+  lastUpdated :{ type: String,},
   time :{ type: String,},
   amount :{ type: String,},
   planprofitPerDay : {type:Number},

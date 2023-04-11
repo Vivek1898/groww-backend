@@ -23,6 +23,7 @@ const walletSchema = new mongoose.Schema({
     ref: 'User',
   
   },
+  lastUpdated :{ type: String,},
 },
 
 { timestamps: true }

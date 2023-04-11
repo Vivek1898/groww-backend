@@ -1,6 +1,7 @@
 const Refund = require("../models/refund");
 const wallet = require("../models/wallet");
 const user = require("../models/user");
+const Payment = require("../models/paymentModel");
 exports.createRefund = async (req,res ) =>{
     try {
         const plan = await Refund.create(req.body);
@@ -56,24 +57,37 @@ exports.refundBookings = async (req, res) => {
     const { amount } = req.body;
     console.log(amount);
     console.log(BookingIdToCancel)
+    const refundBooking = await Refund.findById(BookingIdToCancel);
+    console.log(refundBooking);
+    console.log(refundBooking.user._id);
+    
 
     try {
+      const IST_TIME_ZONE = 'Asia/Kolkata';
+      const now = new Date();
+      const istDate = new Intl.DateTimeFormat('en-US', {
+        timeZone: IST_TIME_ZONE,
+      }).format(now);
+      refundBooking.lastUpdated =istDate;
+      refundBooking.save();
         // const users = await user.find({
         //     $and: [
         //       { email: BookingIdToCancel },
         //       { refunds: { $elemMatch: { refundId: refundIdToCancel } } }
         //     ]
         //   });
-        const users=await user.find({email:BookingIdToCancel});
-        console.log(users);
-   if(users.length==0){
-    return res.status(400).json({
-        success: false,
-        error: "User not found",
-        });
-    }
-    const wallets= await wallet.find({user:users[0]._id});
+        // const users=await user.find({user:refundBooking.user._id});
+        // console.log(users);
+      
+  //  if(users.length==0){
+  //   return res.status(400).json({
+  //       success: false,
+  //       error: "User not found",
+  //       });
+  //   }
+    const wallets= await wallet.find({user:refundBooking.user._id});
     console.log(wallets);
+   
     
     let walletAmount=wallets[0].latestBalance;
     if(Number(amount)>walletAmount){
@@ -87,6 +101,7 @@ exports.refundBookings = async (req, res) => {
     const newAmount=walletAmount-Number(amount);
     console.log(newAmount)
     wallets[0].latestBalance=Number(newAmount);
+    // wallets[0].lastUpdated=istDate;
     await wallets[0].save();
     console.log(wallets);
 
@@ -109,9 +124,24 @@ exports.refundBookings = async (req, res) => {
     // return
     const { userIdToUpdate } = req.params;
     const { amount } = req.body;
+
+  
     console.log(amount)
 
     try {
+      const IST_TIME_ZONE = 'Asia/Kolkata';
+      const now = new Date();
+      const istDate = new Intl.DateTimeFormat('en-US', {
+        timeZone: IST_TIME_ZONE,
+      }).format(now);
+      
+      const bookings = await Payment.updateOne({ _id: req.body.paymentId }, { lastUpdated : istDate });
+      if (bookings.nModified === 0) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+      console.log(bookings);
+      console.log("Booking Updated");
+      // bookings.save();
     const wallets= await wallet.find({user:userIdToUpdate});
     console.log(wallets);
     
