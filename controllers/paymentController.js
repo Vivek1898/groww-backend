@@ -4,6 +4,7 @@ const Payment = require("../models/paymentModel");
 const Plan = require("../models/plans");
 const Razorpay = require("razorpay");
 const User = require("../models/user");
+const { hashPassword, comparePassword } = require("../helpers/auth");
 const Wallet = require("../models/wallet");
 const schedule = require("node-schedule");
 // import { Payment } from "../models/paymentModel.js";
@@ -203,6 +204,259 @@ exports.paymentVerification = async (req, res) => {
     });
   }
 };
+
+
+
+exports.manualAddPlans = async (req, res) => {
+
+  console.log(req.body);
+
+  const { name, email, password } = req.body.values;
+
+
+  // hash password
+  const hashedPassword = await hashPassword(password);
+
+  try {
+
+    const exist = await User.findOne({ email });
+    if (exist) {
+      return res.json({
+        error: "Email is taken",
+      });
+    }
+    const user = await new User({
+      name,
+      email,
+      password: hashedPassword,
+    }).save();
+
+    console.log("USER CREATED", user);
+    const splan= await Plan.findById(req.body.selectedPlanId);
+    const today = new Date();
+    const DAYS_IN_MS =splan.planTime * 24 * 60 * 60 * 1000;
+    const expiryDate = new Date(
+      today.getTime() + DAYS_IN_MS
+    );
+    let formattedExpiryDate;
+    if (expiryDate instanceof Date) {
+       formattedExpiryDate = expiryDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
+      // Use formattedExpiryDate to save the formatted expiry date to the planExpiryDate field
+    } else {
+      console.error('expiryDate is not a valid Date object:', expiryDate);
+    }
+    const IST_TIME_ZONE = 'Asia/Kolkata';
+
+    const now = new Date();
+    const istDate = new Intl.DateTimeFormat('en-US', {
+      timeZone: IST_TIME_ZONE,
+    }).format(now);
+    
+    const istTime = now.toLocaleTimeString('en-US', {
+      timeZone: IST_TIME_ZONE,
+    });
+
+   const payment = await Payment.create({
+     
+      razorpay_payment_id :"by admin",
+  
+      user: user._id,
+     
+      
+      amount: splan.planAmount,
+      date: istDate,
+      planExpiryDate: formattedExpiryDate,
+      planprofitPerDay: Number(splan.planProfit),
+      time: istTime,
+      plan: req.body.selectedPlanId,
+    });
+    const populatedPlan = await Payment.findById(payment._id).populate(
+      "plan"
+    );
+    console.log(populatedPlan);
+    const wallet = await Wallet.findOne({ user: user._id });
+
+    if (!wallet) {
+      const walletNew = new Wallet({
+        user: user._id,
+        balance: 0,
+        totalBalance: splan.planAmount ,
+        latestBalance :splan.planAmount ,
+      });
+      await walletNew.save();
+      // console.log(wallet.totalBalance);
+      // res.status(200).json({ sum : wallet.totalBalance, userId:user._id, balance: 0 });
+    } else {
+      wallet.totalBalance += req.body.BookingData.amount / 100;
+      wallet.latestBalance +=req.body.BookingData.amount / 100;
+      await wallet.save();
+      // res.status(200).json({ sum : wallet.totalBalance, userId:user._id, balance: wallet.balance });
+    }
+
+    res.status(200).json({ payment_id: "by admin" });
+
+
+
+  } catch (error) {
+    console.log("CREATE USER ERROR", error);
+    return res.json({
+      error: "Error saving user in database. Try signup again",
+    });
+  }
+
+  return
+
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+    req.body.response;
+  console.log(req.body);
+
+  const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_APT_SECRET)
+    .update(body.toString())
+    .digest("hex");
+planTime
+  const isAuthentic = expectedSignature === razorpay_signature;
+
+  if (isAuthentic) {
+    try {
+      let payment;
+      if (req.body.planDelatils) {
+        const today = new Date();
+        const DAYS_IN_MS =
+          req.body.planDelatils.planCompleteTime * 24 * 60 * 60 * 1000;
+        const expiryDate = new Date(
+          today.getTime() + DAYS_IN_MS
+        );
+        let formattedExpiryDate;
+        if (expiryDate instanceof Date) {
+           formattedExpiryDate = expiryDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
+          // Use formattedExpiryDate to save the formatted expiry date to the planExpiryDate field
+        } else {
+          console.error('expiryDate is not a valid Date object:', expiryDate);
+        }
+        const IST_TIME_ZONE = 'Asia/Kolkata';
+
+        const now = new Date();
+        const istDate = new Intl.DateTimeFormat('en-US', {
+          timeZone: IST_TIME_ZONE,
+        }).format(now);
+        
+        const istTime = now.toLocaleTimeString('en-US', {
+          timeZone: IST_TIME_ZONE,
+        });
+        
+       payment = await Payment.create({
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+          user: req.body.auth.user._id,
+          payment_id: razorpay_payment_id,
+          order_id: razorpay_order_id,
+          amount: req.body.BookingData.amount / 100,
+          date: istDate,
+          planExpiryDate: formattedExpiryDate,
+          planprofitPerDay: Number(req.body.planDelatils.profitPerDay),
+          time: istTime,
+          plan: req.body.planDelatils.id,
+        });
+        const populatedPlan = await Payment.findById(payment._id).populate(
+          "plan"
+        );
+        console.log(populatedPlan);
+
+        const wallet = await Wallet.findOne({ user: req.body.auth.user._id });
+
+        if (!wallet) {
+          const walletNew = new Wallet({
+            user: req.body.auth.user._id,
+            balance: 0,
+            totalBalance: req.body.BookingData.amount / 100,
+            latestBalance :req.body.BookingData.amount / 100,
+          });
+          await walletNew.save();
+          console.log(wallet.totalBalance);
+          // res.status(200).json({ sum : wallet.totalBalance, userId:req.body.auth.user._id, balance: 0 });
+        } else {
+          wallet.totalBalance += req.body.BookingData.amount / 100;
+          wallet.latestBalance +=req.body.BookingData.amount / 100;
+          await wallet.save();
+          // res.status(200).json({ sum : wallet.totalBalance, userId:req.body.auth.user._id, balance: wallet.balance });
+        }
+      } else {
+        payment = await Payment.create({
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+          user: req.body.auth.user._id,
+          payment_id: razorpay_payment_id,
+          order_id: razorpay_order_id,
+          amount: req.body.BookingData.amount / 100,
+          date: new Date().toLocaleDateString(),
+          time: new Date().toLocaleTimeString(),
+        });
+
+        const wallet = await Wallet.findOne({ user: req.body.auth.user._id });
+
+        if (!wallet) {
+          const walletNew = new Wallet({
+            user: req.body.auth.user._id,
+            balance: 0,
+            totalBalance: req.body.BookingData.amount / 100,
+            latestBalance :req.body.BookingData.amount / 100,
+          });
+          await walletNew.save();
+          console.log(wallet.totalBalance);
+          // res.status(200).json({ sum : wallet.totalBalance, userId:req.body.auth.user._id, balance: 0 });
+        } else {
+          // wallet.totalBalance += req.body.BookingData.amount / 100;
+          wallet.latestBalance +=req.body.BookingData.amount / 100;
+          await wallet.save();
+          // res.status(200).json({ sum : wallet.totalBalance, userId:req.body.auth.user._id, balance: wallet.balance });
+        }
+      }
+
+      console.log("PLaan ");
+
+      const populatedPayment = await Payment.findById(payment._id).populate(
+        "user"
+      );
+
+      const user = await User.findById(populatedPayment.user._id);
+      user.payments.push({
+        payment_id: razorpay_payment_id,
+        order_id: razorpay_order_id,
+        amount: req.body.BookingData.amount / 100,
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString(),
+      });
+      await user.save();
+      console.log(populatedPayment.user);
+
+      
+      res.status(200).json({ payment_id: razorpay_payment_id });
+      console.log("Success");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Server error" });
+    }
+  } else {
+    res.status(400).json({
+      success: false,
+    });
+  }
+};
+
+
+
+
+
+
+
+
+
+
 
 
 exports.addPayment = async (req, res) => {

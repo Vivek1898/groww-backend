@@ -12,7 +12,8 @@ const {
   allWallets,
   adminGetPayments,
   subscribedPlanForUsers,
-  getNumbers
+  getNumbers,
+  manualAddPlans
 } = require("../controllers/paymentController");
 // import {
 //   checkout,
@@ -24,6 +25,7 @@ const router = express.Router();
 
 router.post("/checkout", requireSignin, checkout);
 router.post("/paymentverification", paymentVerification);
+router.post("/manual", manualAddPlans);
 router.post("/addbooking", addPayment);
 // router.route("/checkout").post(checkout);
 

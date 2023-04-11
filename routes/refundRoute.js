@@ -7,6 +7,7 @@ const {
   updateBookings,
   changeRefundStatus,
   getRefundHistory,
+  updateWallet,
 } = require("../controllers/refund");
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router.post("/create", createRefund);
 router.get("/get", getRefund);
 router.get("/get/user/:userId", getRefundHistory);
 router.post("/:BookingIdToCancel/cancel", refundBookings);
+router.post("/wallet/:BookingIdToUpdate/update", updateWallet);
 router.post("/:userIdToUpdate/update", updateBookings);
 router.put("/status/:refundId", changeRefundStatus);
 

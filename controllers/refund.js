@@ -51,6 +51,43 @@ exports.getRefundHistory = async (req,res) =>{
     }
 }
 
+exports.updateWallet = async (req,res) =>{
+
+    try {
+      const IST_TIME_ZONE = 'Asia/Kolkata';
+
+      const now = new Date();
+      const istDate = new Intl.DateTimeFormat('en-US', {
+        timeZone: IST_TIME_ZONE,
+      }).format(now);
+        const { BookingIdToUpdate } = req.params;
+        const { amount } = req.body;
+        console.log(amount);
+        console.log(BookingIdToUpdate)
+      const Wallet = await wallet.findById(BookingIdToUpdate);
+      console.log(Wallet);
+      Wallet.latestBalance=amount;
+      Wallet.lastUpdated =istDate;
+      Wallet.save();
+      console.log(Wallet);
+
+      res.status(200).json({
+        success: true,
+        Wallet
+      })
+      console.log("Wallet Updated");
+    //  console.log(Wallet.user._id);
+    }catch(err){
+      res.status(500).json({ error: "Server error" });
+      console.log(err);
+
+    }
+
+  }
+
+
+
+
 exports.refundBookings = async (req, res) => {
     console.log("Refund Bookings");
     const { BookingIdToCancel } = req.params;
